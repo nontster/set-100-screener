@@ -17,8 +17,24 @@ class Config:
 
     GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
+    VALID_MODELS = {
+        "gemini-2.5-flash",
+        "gemini-1.5-flash",
+        "gemini-2.0-flash",
+        "gemini-2.5-pro",
+        "gemini-1.5-pro",
+    }
+
     CACHE_DIR: str = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".cache")
     CACHE_TTL_HOURS: int = 12
+
+    @classmethod
+    def get_gemini_model(cls) -> str:
+        """Return configured model or fallback to gemini-2.5-flash if invalid."""
+        model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash").strip()
+        if model not in cls.VALID_MODELS:
+            return "gemini-2.5-flash"
+        return model
 
     @classmethod
     def validate_google_key(cls) -> str:

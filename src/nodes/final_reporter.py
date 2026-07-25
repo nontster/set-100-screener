@@ -67,7 +67,7 @@ def final_reporter_node(state: StockState) -> Dict[str, Any]:
     if Config.GOOGLE_API_KEY:
         try:
             llm = ChatGoogleGenerativeAI(
-                model=Config.GEMINI_MODEL,
+                model=Config.get_gemini_model(),
                 google_api_key=Config.GOOGLE_API_KEY,
                 temperature=0.2,
             )
