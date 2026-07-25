@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0",
+  "extensions": {
+    "superb": {
+      "version": "1.6.0",
+      "source": "local",
+      "manifest_hash": "sha256:fca59276a141726bf28f95764cbb9dfddcf205258b078146679db0486b2e483b",
+      "enabled": true,
+      "priority": 10,
+      "registered_commands": {
+        "agy": [
+          "speckit.superb.check",
+          "speckit.superb.brainstorm",
+          "speckit.superb.controller",
+          "speckit.superb.review",
+          "speckit.superb.verify",
+          "speckit.superb.critique",
+          "speckit.superb.debug",
+          "speckit.superb.finish",
+          "speckit.superb.respond",
+          "speckit.superb.plan-gate"
+        ]
+      },
+      "registered_skills": [],
+      "installed_at": "2026-07-25T16:19:09.406800+00:00"
+    }
+  }
+}
