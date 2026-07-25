@@ -15,6 +15,8 @@ class Config:
     LINE_CHANNEL_ACCESS_TOKEN: Optional[str] = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
     LINE_USER_ID: Optional[str] = os.getenv("LINE_USER_ID")
 
+    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+
     CACHE_DIR: str = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".cache")
     CACHE_TTL_HOURS: int = 12
 

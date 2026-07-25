@@ -66,7 +66,7 @@ def value_screener_node(state: StockState) -> Dict[str, Any]:
     if Config.GOOGLE_API_KEY:
         try:
             llm = ChatGoogleGenerativeAI(
-                model="gemini-2.0-flash",
+                model=Config.GEMINI_MODEL,
                 google_api_key=Config.GOOGLE_API_KEY,
                 temperature=0.1,
             )
