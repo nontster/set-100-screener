@@ -13,4 +13,5 @@ streamlit>=1.33.0
 plotly>=5.20.0
 python-dotenv>=1.0.1
 tqdm>=4.66.2
+matplotlib>=3.8.0
 pytest>=8.1.0
