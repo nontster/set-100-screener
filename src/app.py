@@ -215,15 +215,8 @@ def main():
         if filtered_df.empty:
             st.info("No stocks match the selected filter criteria.")
         else:
-            try:
-                display_df = filtered_df.style.background_gradient(
-                    subset=["Total Score"], cmap="RdYlGn"
-                ).format({"Total Score": "{:.1f}"})
-            except Exception:
-                display_df = filtered_df
-
             st.dataframe(
-                display_df,
+                filtered_df,
                 column_config={
                     "Total Score": st.column_config.ProgressColumn(
                         "Total Score",
