@@ -233,7 +233,7 @@ def main():
                         max_value=100,
                     ),
                 },
-                use_container_width=True,
+                width="stretch",
                 height=400,
             )
 
@@ -256,7 +256,7 @@ def main():
                     },
                     hole=0.4,
                 )
-                st.plotly_chart(pie_fig, use_container_width=True)
+                st.plotly_chart(pie_fig, width="stretch")
 
         with c2:
             st.markdown("##### Value Score vs Total Score (by Fraud Risk)")
@@ -274,7 +274,7 @@ def main():
                     },
                     size_max=15,
                 )
-                st.plotly_chart(scatter_fig, use_container_width=True)
+                st.plotly_chart(scatter_fig, width="stretch")
 
     # --- TAB 3: STOCK DEEP-DIVE ---
     with tab3:
@@ -323,7 +323,7 @@ def main():
                         template="plotly_dark",
                         xaxis_rangeslider_visible=False,
                     )
-                    st.plotly_chart(candle_fig, use_container_width=True)
+                    st.plotly_chart(candle_fig, width="stretch")
                 else:
                     st.warning("Historical price data unavailable for this ticker.")
             except Exception as e:
