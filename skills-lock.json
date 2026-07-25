@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "readme-generator": {
+      "source": "jeremylongshore/claude-code-plugins-plus-skills",
+      "sourceType": "github",
+      "skillPath": "skills/01-devops-basics/readme-generator/SKILL.md",
+      "computedHash": "da2d2737ea20d276d7e099bb89f57ff8dd86f47570aa45423bf80660b852a62b"
+    }
+  }
+}

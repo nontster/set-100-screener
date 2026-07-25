@@ -10,3 +10,7 @@ env/
 *.csv
 .env
 .DS_Store
+.superpowers/
+.claude/
+graphify-out/
+

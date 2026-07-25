@@ -82,3 +82,34 @@ class FinalDecisionSchema(BaseModel):
     executive_summary: str = Field(
         description="Comprehensive executive summary integrating financial, anti-fraud, and news findings"
     )
+
+
+class StockClassificationSchema(BaseModel):
+    """Stock classification output schema (Dividend vs. Growth vs. Hybrid)."""
+
+    ticker: str = Field(description="Ticker symbol e.g. ADVANC.BK")
+    category: Literal["DIVIDEND", "GROWTH", "HYBRID", "NEUTRAL", "REJECTED"] = Field(
+        description="Assigned stock classification category"
+    )
+    dividend_score: int = Field(
+        ge=0, le=100, description="Dividend score from 0 to 100"
+    )
+    growth_score: int = Field(
+        ge=0, le=100, description="Growth score from 0 to 100"
+    )
+    payout_safety: Literal["SAFE", "CAUTION", "UNSAFE", "NOT_APPLICABLE"] = Field(
+        description="Dividend payout safety assessment"
+    )
+    mega_trends: List[str] = Field(
+        default_factory=list,
+        description="List of identified World Mega Trend alignment tags",
+    )
+    mega_trend_score: int = Field(
+        ge=0, le=100, description="Mega Trend alignment score from 0 to 100"
+    )
+    rationale: str = Field(description="LLM-synthesized executive summary rationale")
+    metrics: dict = Field(
+        default_factory=dict,
+        description="Verified metrics: dividend_yield, payout_ratio, rev_cagr_3yr, eps_cagr_3yr, roe",
+    )
+

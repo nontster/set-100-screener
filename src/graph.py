@@ -10,6 +10,7 @@ from src.nodes.anti_fraud import anti_fraud_node
 from src.nodes.value_screener import value_screener_node
 from src.nodes.scrape_news import scrape_news_node
 from src.nodes.news_sentiment import news_sentiment_node
+from src.nodes.stock_classifier import stock_classifier_node
 from src.nodes.final_reporter import final_reporter_node
 from src.nodes.notification import notification_node
 
@@ -24,6 +25,7 @@ def build_stock_screener_graph():
     builder.add_node("value_screener", value_screener_node)
     builder.add_node("scrape_news", scrape_news_node)
     builder.add_node("news_sentiment", news_sentiment_node)
+    builder.add_node("stock_classifier", stock_classifier_node)
     builder.add_node("final_reporter", final_reporter_node)
     builder.add_node("notification", notification_node)
 
@@ -34,6 +36,7 @@ def build_stock_screener_graph():
     builder.add_edge("fetch_data", "anti_fraud")
     builder.add_edge("fetch_data", "value_screener")
     builder.add_edge("fetch_data", "scrape_news")
+    builder.add_edge("fetch_data", "stock_classifier")
 
     # News sub-branch
     builder.add_edge("scrape_news", "news_sentiment")
@@ -42,6 +45,7 @@ def build_stock_screener_graph():
     builder.add_edge("anti_fraud", "final_reporter")
     builder.add_edge("value_screener", "final_reporter")
     builder.add_edge("news_sentiment", "final_reporter")
+    builder.add_edge("stock_classifier", "final_reporter")
 
     # Final notification and termination
     builder.add_edge("final_reporter", "notification")
@@ -63,6 +67,7 @@ def run_single_stock_screening(ticker: str, notify: bool = False) -> Dict[str, A
     fraud = final_state.get("fraud_report") or {}
     value = final_state.get("value_report") or {}
     sentiment = final_state.get("sentiment_report") or {}
+    classification = final_state.get("classification_report") or {}
 
     return {
         "ticker": final_state.get("ticker", ticker),
@@ -77,6 +82,7 @@ def run_single_stock_screening(ticker: str, notify: bool = False) -> Dict[str, A
         "fraud_report": fraud,
         "value_report": value,
         "sentiment_report": sentiment,
+        "classification_report": classification,
     }
 
 

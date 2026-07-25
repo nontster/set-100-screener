@@ -35,16 +35,24 @@ def run_batch_screening(
             ticker = future_to_ticker[future]
             try:
                 res = future.result()
+                classification = res.get("classification_report") or {}
+                mega_trends_list = classification.get("mega_trends") or []
+                mega_trends_str = ", ".join(mega_trends_list) if mega_trends_list else "None"
+
                 results.append(
                     {
                         "Ticker": res["ticker"],
                         "Recommendation": res["recommendation"],
                         "Total Score": res["total_score"],
+                        "Stock Category": classification.get("category", "NEUTRAL"),
+                        "Payout Safety": classification.get("payout_safety", "N/A"),
+                        "Mega Trend Tags": mega_trends_str,
                         "Value Score": res["value_score"],
                         "Fraud Risk": res["fraud_risk_level"],
                         "Sentiment Score": res["sentiment_score"],
                         "Overall Sentiment": res.get("overall_sentiment", "N/A"),
                         "Executive Summary": res["executive_summary"],
+                        "Classification Rationale": classification.get("rationale", ""),
                     }
                 )
             except Exception as e:
@@ -54,11 +62,15 @@ def run_batch_screening(
                         "Ticker": ticker,
                         "Recommendation": "REJECT",
                         "Total Score": 0.0,
+                        "Stock Category": "REJECTED",
+                        "Payout Safety": "UNSAFE",
+                        "Mega Trend Tags": "None",
                         "Value Score": 0,
                         "Fraud Risk": "HIGH",
                         "Sentiment Score": 0,
                         "Overall Sentiment": "N/A",
                         "Executive Summary": f"Batch processing failed: {e}",
+                        "Classification Rationale": "Batch failure override",
                     }
                 )
 

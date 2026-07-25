@@ -1,19 +1,25 @@
 # 📈 SET100 AI Stock Screener & Anti-Fraud Suite
 
-An automated, multi-agent AI financial screening system built with **LangGraph**, **Gemini 2.0 Flash**, and **Streamlit** for Thai SET 100 stocks. 
+An automated, parallel multi-agent AI financial screening & classification system built with **LangGraph**, **Gemini 3.6 Flash**, and **Streamlit** for Thai SET 100 stocks. 
 
-The system simultaneously evaluates fundamental value metrics, conducts forensic accounting audits (detecting accounting fraud and red flags), analyzes Thai financial news sentiment, and enforces a mandatory **Safety & Anti-Fraud Override** to protect capital before generating investment decisions (`PASS`, `WATCHLIST`, `REJECT`).
+The system simultaneously evaluates fundamental value metrics, conducts forensic accounting audits (detecting accounting fraud and red flags), analyzes Thai financial news sentiment, classifies stocks into **Dividend vs. Growth** profiles with **World Mega Trend** intelligence, and enforces a mandatory **Safety & Anti-Fraud Override** to protect capital before generating investment recommendations (`PASS`, `WATCHLIST`, `REJECT`).
 
 ---
 
 ## 🌟 Key Features
 
-- 🛡️ **Safety & Anti-Fraud Override First**: If high accounting risk or cash flow anomalies (e.g. Net Income vs CFO divergence) are detected, the stock is automatically assigned **`REJECT`** regardless of valuation.
+- 🛡️ **Safety & Anti-Fraud Override First**: If high accounting risk or cash flow anomalies (e.g. Net Income vs Operating Cash Flow divergence) are detected, the stock is automatically assigned **`REJECT`** and `payout_safety = UNSAFE` regardless of dividend yield or valuation metrics.
+- 🏷️ **Dividend vs. Growth Stock Classification**: Automatically categorizes tickers into `DIVIDEND`, `GROWTH`, `HYBRID`, `NEUTRAL`, or `REJECTED` categories based on quantitative performance metrics (Yield, Payout Ratio, 3-Yr Revenue & EPS CAGR) and LLM-synthesized rationales.
+- 🌍 **World Mega Trend Intelligence**: Evaluates stock alignment with major global structural trends, including:
+  - 🤖 *AI & Data Center Infrastructure*
+  - ⚡ *EV & Renewable Energy*
+  - 🏥 *Healthcare & Aging Society*
+  - 📦 *Digital Commerce & Smart Logistics*
 - ⚡ **Parallel Multi-Agent Architecture**: Decoupled single-responsibility nodes managed by a LangGraph Fan-Out / Fan-In graph for fast parallel evaluation.
 - 📊 **Value & Profitability Screener**: Evaluates ROE, Free Cash Flow, Current Ratio, D/E Ratio, and valuation metrics (P/E, P/BV).
 - 📰 **Thai News Sentiment Agent**: Scrapes recent Thai financial news via Google News RSS (`{ticker} หุ้น`) and scores sentiment (-100 to +100) using Gemini structured output.
 - 🔔 **Multi-Channel Push Alerts**: Instant Telegram & LINE push notifications for `PASS` recommendations and daily post-market batch digests.
-- 💻 **Interactive Web Dashboard**: Streamlit UI with metric cards, sortable color-coded tables, Plotly distribution charts, and stock deep-dive with live 1-year candlestick price charts.
+- 💻 **Interactive Web Dashboard**: Streamlit UI featuring category & Mega Trend filters, sortable color-coded tables, Plotly distribution charts, and stock deep-dive with classification breakdown cards and live 1-year candlestick price charts.
 - ⏰ **Automated Post-Market Batch Runs**: APScheduler cron job running daily at **17:00 ICT** (Mon-Fri) exporting Excel (`.xlsx`) and UTF-8-SIG CSV (`.csv`) reports.
 
 ---
@@ -26,10 +32,12 @@ graph TD
     Fetch --> BranchA[anti_fraud: Forensic Accounting Audit]
     Fetch --> BranchB[value_screener: Fundamental Value Scoring]
     Fetch --> BranchC1[scrape_news: Google News RSS Scraper]
+    Fetch --> BranchD[stock_classifier: Dividend vs Growth & Mega Trends]
     BranchC1 --> BranchC2[news_sentiment: Gemini Sentiment Analysis]
     BranchA --> FanIn[final_reporter: Total Score & Override Rules]
     BranchB --> FanIn
     BranchC2 --> FanIn
+    BranchD --> FanIn
     FanIn --> Notify[notification: Telegram & LINE Alerts]
     Notify --> End([End])
 ```
@@ -43,7 +51,7 @@ $$\text{Total Score} = (\text{Value Score} \times 0.7) + \left(\frac{\text{Senti
 - **Fraud Penalty**: `0` for LOW risk, `20` for MEDIUM risk, auto-REJECT for HIGH risk.
 
 ### Recommendation Decision Logic
-1. **Rule 1 (Safety Override)**: `Fraud Risk == HIGH` $\rightarrow$ **`REJECT`** (overrides all scores).
+1. **Rule 1 (Safety Override)**: `Fraud Risk == HIGH` $\rightarrow$ **`REJECT`** (overrides all scores and categories).
 2. **Rule 2 (Sentiment Override)**: `Sentiment Score < -50` $\rightarrow$ **`WATCHLIST`** or **`REJECT`** (overrides `PASS`).
 3. **Rule 3 (PASS Criteria)**: `Fraud Risk == LOW` AND `Value Score >= 70` AND `Sentiment Score >= -20` $\rightarrow$ **`PASS`**.
 4. **Rule 4 (Default)**: All other combinations $\rightarrow$ **`WATCHLIST`**.
@@ -54,7 +62,7 @@ $$\text{Total Score} = (\text{Value Score} \times 0.7) + \left(\frac{\text{Senti
 
 ### 1. Prerequisites
 - **Python 3.10+**
-- Google Gemini API Key
+- Google Gemini API Key (`GOOGLE_API_KEY`)
 
 ### 2. Installation
 ```bash
@@ -91,18 +99,26 @@ LINE_USER_ID=your_line_user_id_here
 ### 1. Run Single Stock CLI Screen
 Evaluate any SET100 stock symbol:
 ```bash
-python -m src.graph --ticker CPALL [--notify]
+python -m src.graph --ticker ADVANC [--notify]
 ```
 **Output Example (JSON)**:
 ```json
 {
-  "ticker": "CPALL",
+  "ticker": "ADVANC",
   "recommendation": "PASS",
-  "total_score": 78.5,
+  "total_score": 82.5,
   "fraud_risk_level": "LOW",
   "value_score": 80,
-  "sentiment_score": 45,
-  "executive_summary": "Solid retail business with consistent cash flows and low fraud risk."
+  "sentiment_score": 50,
+  "executive_summary": "Strong market position with robust free cash flows and low accounting risk.",
+  "classification_report": {
+    "category": "HYBRID",
+    "dividend_score": 85,
+    "growth_score": 75,
+    "payout_safety": "SAFE",
+    "mega_trends": ["AI & Data Center Infrastructure"],
+    "rationale": "Dual-benefit stock offering both attractive dividend yield (4.8%) and AI Data Center infrastructure expansion."
+  }
 }
 ```
 
@@ -118,8 +134,8 @@ Scans all ~100 tickers in parallel and exports reports:
 python -m src.batch --workers 3 --output-dir .
 ```
 Outputs:
-- `SET100_AI_Screening_Report.xlsx` (Excel report)
-- `SET100_AI_Screening_Report.csv` (UTF-8-SIG encoded CSV for Thai text)
+- `SET100_AI_Screening_Report.xlsx` (Excel report with Stock Category & Mega Trend columns)
+- `SET100_AI_Screening_Report.csv` (UTF-8-SIG encoded CSV for Thai text compatibility)
 
 ### 4. Start Post-Market Daily Scheduler
 Runs batch screening automatically every weekday at 17:00 ICT:
@@ -131,16 +147,16 @@ python -m src.scheduler
 
 ## 🧪 Testing
 
-Run the complete test suite (20 unit and integration tests):
+Run the complete test suite (28 unit and integration tests):
 ```bash
-PYTHONPATH=. pytest tests/ -v
+PYTHONPATH=. .venv/bin/pytest tests/ -v
 ```
 
 ---
 
 ## 🛠️ Tech Stack & Standards
 
-- **Agent Orchestration**: LangGraph, LangChain Google GenAI (`gemini-2.0-flash` with `with_structured_output`)
+- **Agent Orchestration**: LangGraph, LangChain Google GenAI (`gemini-3.6-flash` with `with_structured_output`)
 - **Data Extraction**: `yfinance` (financial metrics & price history), `requests` + `beautifulsoup4` (Google News RSS)
 - **Data Schemas**: `pydantic` (v2) models
 - **Batch Export**: `pandas`, `openpyxl` (Excel), UTF-8-SIG CSV

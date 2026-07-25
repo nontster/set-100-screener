@@ -148,6 +148,29 @@ def main():
         key="ms_rec_filter",
     )
 
+    # Multi-select stock category
+    categories = ["DIVIDEND", "GROWTH", "HYBRID", "NEUTRAL", "REJECTED"]
+    selected_categories = st.sidebar.multiselect(
+        "Stock Category",
+        options=categories,
+        default=categories,
+        key="ms_category_filter",
+    )
+
+    # Multi-select Mega Trends
+    mega_trends_opts = [
+        "AI & Data Center Infrastructure",
+        "EV & Renewable Energy",
+        "Healthcare & Aging Society",
+        "Digital Commerce & Smart Logistics",
+    ]
+    selected_mega_trends = st.sidebar.multiselect(
+        "World Mega Trends",
+        options=mega_trends_opts,
+        default=[],
+        key="ms_megatrend_filter",
+    )
+
     # Multi-select fraud risk levels
     fraud_risks = ["LOW", "MEDIUM", "HIGH"]
     selected_fraud = st.sidebar.multiselect(
@@ -174,27 +197,47 @@ def main():
         with st.spinner(f"Evaluating {manual_ticker} across multi-agent graph..."):
             res = run_single_stock_screening(manual_ticker)
             st.sidebar.success(f"Analysis Complete! Recommendation: {res['recommendation']}")
+            classification = res.get("classification_report") or {}
+            mega_trends_list = classification.get("mega_trends") or []
             # Append/update dataframe
             new_row = {
                 "Ticker": res["ticker"],
                 "Recommendation": res["recommendation"],
                 "Total Score": res["total_score"],
+                "Stock Category": classification.get("category", "NEUTRAL"),
+                "Payout Safety": classification.get("payout_safety", "N/A"),
+                "Mega Trend Tags": ", ".join(mega_trends_list) if mega_trends_list else "None",
                 "Value Score": res["value_score"],
                 "Fraud Risk": res["fraud_risk_level"],
                 "Sentiment Score": res["sentiment_score"],
                 "Executive Summary": res["executive_summary"],
+                "Classification Rationale": classification.get("rationale", ""),
             }
             # Update df in session
             df = pd.concat([pd.DataFrame([new_row]), df], ignore_index=True).drop_duplicates(
                 subset=["Ticker"], keep="first"
             )
 
-    # Apply Filters
-    filtered_df = df[
+    # Filter logic
+    cat_col = "Stock Category" if "Stock Category" in df.columns else None
+    mt_col = "Mega Trend Tags" if "Mega Trend Tags" in df.columns else None
+
+    filter_mask = (
         (df["Recommendation"].isin(selected_recs))
         & (df["Fraud Risk"].isin(selected_fraud))
         & (df["Total Score"] >= min_score)
-    ]
+    )
+
+    if cat_col and selected_categories:
+        filter_mask = filter_mask & (df[cat_col].isin(selected_categories))
+
+    if mt_col and selected_mega_trends:
+        mt_mask = df[mt_col].astype(str).apply(
+            lambda val: any(trend in val for trend in selected_mega_trends)
+        )
+        filter_mask = filter_mask & mt_mask
+
+    filtered_df = df[filter_mask]
 
     # --- TOP SUMMARY ROW ---
     col1, col2, col3, col4 = st.columns(4)
@@ -306,6 +349,19 @@ def main():
 
             st.markdown("#### AI Executive Summary")
             st.info(row["Executive Summary"])
+
+            # --- CLASSIFICATION BREAKDOWN CARD (T010) ---
+            with st.expander("🏷️ Stock Classification & Mega Trend Breakdown", expanded=True):
+                c_cat = row.get("Stock Category", "NEUTRAL")
+                c_payout = row.get("Payout Safety", "N/A")
+                c_trends = row.get("Mega Trend Tags", "None")
+                c_rationale = row.get("Classification Rationale", "N/A")
+
+                st.markdown(f"**Stock Category**: `{c_cat}` | **Payout Safety**: `{c_payout}`")
+                st.markdown(f"**World Mega Trend Exposure**: `{c_trends}`")
+
+                if c_rationale and c_rationale != "N/A":
+                    st.success(f"**Classification Rationale**: {c_rationale}")
 
         # Live 1-Year Candlestick Chart via yfinance
         st.markdown(f"#### 1-Year Price History ({selected_ticker}.BK)")
