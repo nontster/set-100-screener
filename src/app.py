@@ -64,9 +64,16 @@ st.markdown(
 )
 
 
-@st.cache_data(ttl=3600 * 12)
-def load_cached_reports() -> pd.DataFrame:
-    """Load latest screening report from CSV if available, or initialize mock data."""
+def get_csv_mtime(csv_path: str = "SET100_AI_Screening_Report.csv") -> float:
+    """Return modification timestamp of CSV file, or 0.0 if missing."""
+    if os.path.exists(csv_path):
+        return os.path.getmtime(csv_path)
+    return 0.0
+
+
+@st.cache_data(ttl=60)
+def load_cached_reports(mtime: float) -> pd.DataFrame:
+    """Load latest screening report from CSV if available, or initialize default mock data."""
     csv_path = "SET100_AI_Screening_Report.csv"
     if os.path.exists(csv_path):
         try:
@@ -120,16 +127,17 @@ def main():
     st.title("📈 SET100 AI Stock Screener & Anti-Fraud Suite")
     st.caption("Parallel Multi-Agent Financial Quality, Accounting Audit, and News Sentiment Analysis")
 
-    # Load data
-    df = load_cached_reports()
+    # Load data dynamically based on CSV modification timestamp
+    mtime = get_csv_mtime()
+    df = load_cached_reports(mtime)
 
     # --- SIDEBAR FILTERS ---
     st.sidebar.header("🔍 Filter Options")
 
     # Clear cache action button
-    if st.sidebar.button("🧹 Clear Local Data Cache", key="btn_clear_cache"):
+    if st.sidebar.button("🔄 Refresh Data", key="btn_clear_cache"):
         st.cache_data.clear()
-        st.sidebar.success("Cache cleared!")
+        st.rerun()
 
     # Multi-select recommendation status
     recommendations = ["PASS", "WATCHLIST", "REJECT"]
