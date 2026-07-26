@@ -68,7 +68,6 @@ def value_screener_node(state: StockState) -> Dict[str, Any]:
             llm = ChatGoogleGenerativeAI(
                 model=Config.get_gemini_model(),
                 google_api_key=Config.GOOGLE_API_KEY,
-                temperature=0.1,
             )
             structured_llm = llm.with_structured_output(ValueAnalysisSchema)
 

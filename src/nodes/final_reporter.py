@@ -69,7 +69,6 @@ def final_reporter_node(state: StockState) -> Dict[str, Any]:
             llm = ChatGoogleGenerativeAI(
                 model=Config.get_gemini_model(),
                 google_api_key=Config.GOOGLE_API_KEY,
-                temperature=0.2,
             )
 
             prompt = f"""
