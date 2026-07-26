@@ -51,3 +51,34 @@ def test_pass_recommendation_criteria():
     decision = result["final_decision"]
 
     assert decision["recommendation"] == "PASS"
+
+
+def test_final_reporter_handles_list_response_content(monkeypatch):
+    """Test that final_reporter_node safely handles AIMessage response with list content."""
+    from src.config import Config
+
+    class MockAIMessage:
+        content = ["Executive summary text part 1. ", "Executive summary text part 2."]
+
+    class MockLLM:
+        def invoke(self, prompt):
+            return MockAIMessage()
+
+    monkeypatch.setattr(Config, "GOOGLE_API_KEY", "mock_key")
+    monkeypatch.setattr(
+        "src.nodes.final_reporter.ChatGoogleGenerativeAI",
+        lambda **kwargs: MockLLM(),
+    )
+
+    state: StockState = {
+        "ticker": "TEST_TICKER",
+        "fraud_report": {"fraud_risk_level": "LOW", "red_flags": []},
+        "value_report": {"score": 80},
+        "sentiment_report": {"sentiment_score": 50},
+    }
+
+    result = final_reporter_node(state)
+    decision = result["final_decision"]
+
+    assert decision["executive_summary"] == "Executive summary text part 1. Executive summary text part 2."
+

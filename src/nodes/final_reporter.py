@@ -86,7 +86,18 @@ def final_reporter_node(state: StockState) -> Dict[str, Any]:
 
             response = llm.invoke(prompt)
             if response and response.content:
-                summary_text = response.content.strip()
+                if isinstance(response.content, str):
+                    summary_text = response.content.strip()
+                elif isinstance(response.content, list):
+                    parts = []
+                    for part in response.content:
+                        if isinstance(part, str):
+                            parts.append(part)
+                        elif isinstance(part, dict) and "text" in part:
+                            parts.append(str(part["text"]))
+                        else:
+                            parts.append(str(part))
+                    summary_text = "".join(parts).strip()
 
         except Exception as e:
             print(f"Warning: Gemini API summary generation failed for {ticker}: {e}")
