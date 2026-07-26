@@ -1,8 +1,39 @@
+import re
 from typing import Any, Dict
 from langchain_google_genai import ChatGoogleGenerativeAI
 from src.state import StockState
 from src.schemas import FinalDecisionSchema
 from src.config import Config
+
+DECISION_KEYWORDS = [
+    "REJECT",
+    "REJECTED",
+    "PASS",
+    "WATCHLIST",
+    "BUY",
+    "HOLD",
+    "NEUTRAL",
+    "DIVIDEND",
+    "GROWTH",
+    "HYBRID",
+    "SAFE",
+    "UNSAFE",
+    "CAUTION",
+    "HIGH FRAUD RISK",
+]
+
+
+def enforce_bold_decisions(text: str) -> str:
+    """
+    Ensures recommendation decision keywords in text are wrapped in markdown bold (**KEYWORD**).
+    Example input: "We issue a definitive REJECT recommendation..."
+    Example output: "We issue a definitive **REJECT** recommendation..."
+    """
+    if not text:
+        return text
+
+    pattern = r"(?<!\*\*)\b(" + "|".join(re.escape(k) for k in DECISION_KEYWORDS) + r")\b(?!\*\*)"
+    return re.sub(pattern, r"**\1**", text)
 
 
 def final_reporter_node(state: StockState) -> Dict[str, Any]:
@@ -10,6 +41,7 @@ def final_reporter_node(state: StockState) -> Dict[str, Any]:
     Synthesis Fan-In Join Node: Aggregates evaluation results from Anti-Fraud, Value,
     and News Sentiment branches.
     Enforces total score formula, Anti-Fraud override rules, and sentiment risk gates.
+    Applies APP_LANGUAGE localization and bold decision markdown formatting.
     """
     ticker = state.get("ticker", "UNKNOWN")
     fraud_report = state.get("fraud_report") or {}
@@ -53,6 +85,8 @@ def final_reporter_node(state: StockState) -> Dict[str, Any]:
 
     # Executive Summary Generation
     company_name = state.get("raw_data", {}).get("company_name", ticker)
+    app_lang = Config.get_app_language()
+    target_language_name = "Thai" if app_lang == "th" else "English"
 
     summary_text = (
         f"Analysis report for {company_name} ({ticker}): "
@@ -73,6 +107,9 @@ def final_reporter_node(state: StockState) -> Dict[str, Any]:
 
             prompt = f"""
             You are the Chief Investment Officer (CIO) summarizing an investment evaluation for Thai stock {company_name} ({ticker}).
+            Language: Write the summary in {target_language_name}.
+            Formatting Requirement: You MUST format the final recommendation decision keyword (e.g. {recommendation}) in BOLD Markdown syntax like **{recommendation}**.
+
             Key Metrics:
             - Final Recommendation: {recommendation}
             - Total Score: {total_score}/100
@@ -81,7 +118,7 @@ def final_reporter_node(state: StockState) -> Dict[str, Any]:
             - News Sentiment Score: {sentiment_score} ({sentiment_report.get('overall_sentiment', 'N/A')})
             - News Summary: {sentiment_report.get('news_summary', '')}
 
-            Draft a concise, professional 3-4 sentence CIO executive summary explaining the rationale for the {recommendation} recommendation.
+            Draft a concise, professional 3-4 sentence CIO executive summary in {target_language_name} explaining the rationale for the {recommendation} recommendation. Make sure recommendation decision keywords are formatted in bold Markdown (e.g., **{recommendation}**).
             """
 
             response = llm.invoke(prompt)
@@ -101,6 +138,9 @@ def final_reporter_node(state: StockState) -> Dict[str, Any]:
 
         except Exception as e:
             print(f"Warning: Gemini API summary generation failed for {ticker}: {e}")
+
+    # Enforce deterministic bold Markdown formatting for recommendation decision keywords
+    summary_text = enforce_bold_decisions(summary_text)
 
     final_decision = FinalDecisionSchema(
         recommendation=recommendation,

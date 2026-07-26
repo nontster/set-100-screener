@@ -38,6 +38,23 @@ class Config:
         return model
 
     @classmethod
+    def get_app_language(cls) -> str:
+        """
+        Return normalized ISO language code ('th' or 'en').
+        Reads APP_LANGUAGE or fallback SUMMARY_LANGUAGE from environment.
+        Defaults to 'en' if unset or unparseable.
+        """
+        raw_lang = (
+            os.getenv("APP_LANGUAGE") or os.getenv("SUMMARY_LANGUAGE") or ""
+        ).strip().lower()
+
+        if raw_lang in {"th", "th_th", "th-th", "thai"}:
+            return "th"
+        elif raw_lang in {"en", "en_us", "en-us", "english"}:
+            return "en"
+        return "en"
+
+    @classmethod
     def validate_google_key(cls) -> str:
         """Validate that Google API key is configured."""
         if not cls.GOOGLE_API_KEY:

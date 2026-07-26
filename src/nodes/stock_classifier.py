@@ -3,6 +3,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from src.state import StockState
 from src.schemas import StockClassificationSchema
 from src.config import Config
+from src.nodes.final_reporter import enforce_bold_decisions
 
 MEGA_TREND_TAXONOMY = {
     "AI & Data Center Infrastructure": [
@@ -98,7 +99,9 @@ def calculate_classification_scores(
             "payout_safety": "UNSAFE",
             "mega_trends": mega_trend_data.get("mega_trends", []),
             "mega_trend_score": mega_trend_data.get("mega_trend_score", 0),
-            "rationale": "FORCED OVERRIDE: Stock exhibits HIGH forensic accounting risk. Recommending REJECTED regardless of dividend or growth metrics.",
+            "rationale": enforce_bold_decisions(
+                "FORCED OVERRIDE: Stock exhibits HIGH forensic accounting risk. Recommending REJECTED regardless of dividend or growth metrics."
+            ),
         }
 
     div_yield = metrics.get("dividend_yield")
@@ -148,51 +151,64 @@ def calculate_classification_scores(
         elif rev_cagr >= 10.0:
             growth_base += 25
         elif rev_cagr >= 5.0:
-            growth_base += 10
-        elif rev_cagr < 0:
-            growth_base -= 15
+            growth_base += 15
 
     if eps_cagr is not None:
         if eps_cagr >= 15.0:
-            growth_base += 25
+            growth_base += 35
         elif eps_cagr >= 10.0:
+            growth_base += 25
+        elif eps_cagr >= 5.0:
             growth_base += 15
 
     if roe is not None and roe >= 15.0:
         growth_base += 15
 
-    if mega_trend_score >= 50:
-        growth_base += 25
-    elif mega_trend_score > 0:
-        growth_base += 10
+    growth_score_raw = growth_base + (mega_trend_score * 0.2)
+    growth_score = max(0, min(100, int(growth_score_raw)))
 
-    growth_score = max(0, min(100, int(growth_base)))
-
-    # Category Determination
-    category = "NEUTRAL"
-    if dividend_score >= 70 and growth_score >= 70:
+    # Classification Assignment
+    if dividend_score >= 65 and growth_score >= 65:
         category = "HYBRID"
-    elif dividend_score >= 70:
+    elif dividend_score >= 65:
         category = "DIVIDEND"
-    elif growth_score >= 70:
+    elif growth_score >= 65:
         category = "GROWTH"
-
-    # Default Rationale Template
-    rationale_parts = []
-    if category == "DIVIDEND":
-        rationale_parts.append(f"Strong dividend profile (Yield: {div_yield if div_yield else 'N/A'}%, Safety: {payout_safety}).")
-    elif category == "GROWTH":
-        rationale_parts.append(f"High growth momentum (Growth Score: {growth_score}/100).")
-    elif category == "HYBRID":
-        rationale_parts.append(f"Dual-benefit stock offering both attractive dividend yield and growth momentum.")
     else:
-        rationale_parts.append(f"Balanced/Neutral fundamental profile (Div Score: {dividend_score}, Growth Score: {growth_score}).")
+        category = "NEUTRAL"
 
-    if mega_trend_data.get("mega_trends"):
-        trends_str = ", ".join(mega_trend_data["mega_trends"])
-        rationale_parts.append(f"Aligned with World Mega Trends: {trends_str}.")
+    # Default Rationale Template based on Language
+    app_lang = Config.get_app_language()
+    rationale_parts = []
 
-    rationale = " ".join(rationale_parts)
+    if app_lang == "th":
+        if category == "DIVIDEND":
+            rationale_parts.append(f"โปรไฟล์เงินปันผลแข็งแกร่ง (อัตราเงินปันผลตอบแทน: {div_yield if div_yield else 'N/A'}%, ความปลอดภัย: {payout_safety})")
+        elif category == "GROWTH":
+            rationale_parts.append(f"โมเมนตัมการเติบโตสูง (คะแนนการเติบโต: {growth_score}/100)")
+        elif category == "HYBRID":
+            rationale_parts.append("หุ้นที่ให้อัตราเงินปันผลตอบแทนและแรงโมเมนตัมการเติบโตควบคู่กัน")
+        else:
+            rationale_parts.append(f"โปรไฟล์พื้นฐานที่สมดุล/เป็นกลาง (คะแนนปันผล: {dividend_score}, คะแนนการเติบโต: {growth_score})")
+
+        if mega_trend_data.get("mega_trends"):
+            trends_str = ", ".join(mega_trend_data["mega_trends"])
+            rationale_parts.append(f"สอดคล้องกับแนวโน้มเมกะเทรนด์โลก: {trends_str}")
+    else:
+        if category == "DIVIDEND":
+            rationale_parts.append(f"Strong dividend profile (Yield: {div_yield if div_yield else 'N/A'}%, Safety: {payout_safety}).")
+        elif category == "GROWTH":
+            rationale_parts.append(f"High growth momentum (Growth Score: {growth_score}/100).")
+        elif category == "HYBRID":
+            rationale_parts.append("Dual-benefit stock offering both attractive dividend yield and growth momentum.")
+        else:
+            rationale_parts.append(f"Balanced/Neutral fundamental profile (Div Score: {dividend_score}, Growth Score: {growth_score}).")
+
+        if mega_trend_data.get("mega_trends"):
+            trends_str = ", ".join(mega_trend_data["mega_trends"])
+            rationale_parts.append(f"Aligned with World Mega Trends: {trends_str}.")
+
+    rationale = enforce_bold_decisions(" ".join(rationale_parts))
 
     return {
         "category": category,
@@ -209,6 +225,7 @@ def stock_classifier_node(state: StockState) -> Dict[str, Any]:
     """
     LangGraph Node: Classifies stock into DIVIDEND, GROWTH, HYBRID, NEUTRAL, or REJECTED
     using quantitative metrics, World Mega Trend alignment, and LLM rationale synthesis.
+    Supports APP_LANGUAGE localization and bold category markdown formatting.
     """
     ticker = state.get("ticker", "UNKNOWN")
     raw_data = state.get("raw_data", {})
@@ -232,6 +249,9 @@ def stock_classifier_node(state: StockState) -> Dict[str, Any]:
         free_cash_flow=free_cash_flow,
     )
 
+    app_lang = Config.get_app_language()
+    target_language_name = "Thai" if app_lang == "th" else "English"
+
     # Step 4: Synthesize LLM executive rationale if API key is present
     if Config.GOOGLE_API_KEY and fraud_risk_level != "HIGH":
         try:
@@ -243,6 +263,9 @@ def stock_classifier_node(state: StockState) -> Dict[str, Any]:
 
             prompt = f"""
             You are a senior investment strategist evaluating Thai stock {ticker}.
+            Language: Write the executive rationale in {target_language_name}.
+            Formatting Requirement: You MUST format the category classification keyword (e.g. {scores['category']}) and key status terms in BOLD Markdown syntax like **{scores['category']}**.
+
             Classification Data:
             - Assigned Category: {scores['category']}
             - Dividend Score: {scores['dividend_score']}/100 (Yield: {metrics.get('dividend_yield')}%, Payout Ratio: {metrics.get('payout_ratio')}%)
@@ -250,7 +273,7 @@ def stock_classifier_node(state: StockState) -> Dict[str, Any]:
             - Growth Score: {scores['growth_score']}/100 (Rev CAGR: {metrics.get('rev_cagr_3yr')}%, EPS CAGR: {metrics.get('eps_cagr_3yr')}%, ROE: {metrics.get('roe')}%)
             - World Mega Trends Aligned: {scores['mega_trends']} (Score: {scores['mega_trend_score']}/100)
 
-            Generate a concise, factual executive rationale explaining the stock's classification and highlighting its dividend safety and/or mega-trend growth drivers.
+            Generate a concise, factual executive rationale in {target_language_name} explaining the stock's classification and highlighting its dividend safety and/or mega-trend growth drivers.
             Output a valid StockClassificationSchema object.
             """
 
@@ -264,6 +287,7 @@ def stock_classifier_node(state: StockState) -> Dict[str, Any]:
             report_dict["mega_trends"] = scores["mega_trends"]
             report_dict["mega_trend_score"] = scores["mega_trend_score"]
             report_dict["metrics"] = metrics
+            report_dict["rationale"] = enforce_bold_decisions(report_dict.get("rationale", ""))
 
             return {"classification_report": report_dict}
 
@@ -279,7 +303,7 @@ def stock_classifier_node(state: StockState) -> Dict[str, Any]:
         payout_safety=scores["payout_safety"],
         mega_trends=scores["mega_trends"],
         mega_trend_score=scores["mega_trend_score"],
-        rationale=scores["rationale"],
+        rationale=enforce_bold_decisions(scores["rationale"]),
         metrics=metrics,
     )
 

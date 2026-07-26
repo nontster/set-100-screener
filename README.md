@@ -87,6 +87,7 @@ Edit `.env`:
 ```env
 GOOGLE_API_KEY=your_gemini_api_key_here
 GEMINI_MODEL=gemini-3.6-flash
+APP_LANGUAGE=th # Language for Executive Summaries: 'th' (Thai) or 'en' (English, default)
 TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
 TELEGRAM_CHAT_ID=your_telegram_chat_id_here
 LINE_CHANNEL_ACCESS_TOKEN=your_line_channel_access_token_here
@@ -128,6 +129,62 @@ python -m src.graph --ticker ADVANC [--notify]
 streamlit run src/app.py
 ```
 Open your browser at `http://localhost:8501`.
+
+---
+
+### 📱 Interactive Dashboard User Guide
+
+The Streamlit web application provides a comprehensive multi-view interface organized into **3 specialized tabs**:
+
+#### 📊 1. Interactive Screening Table
+The **Interactive Screening Table** displays all evaluated SET100 stocks in a sortable, filterable table.
+
+![Interactive Screening Table](docs/images/screening_table.png)
+
+**How to Read Results**:
+- **Sidebar Filters**: Filter stocks by **Recommendation Status** (`PASS`, `WATCHLIST`, `REJECT`), **Stock Category** (`DIVIDEND`, `GROWTH`, `HYBRID`, `NEUTRAL`), **Payout Safety** (`SAFE`, `CAUTION`, `UNSAFE`), and **World Mega Trends** (`AI & Data Center Infrastructure`, `EV & Renewable Energy`, etc.).
+- **Recommendation Badges**:
+  - 🟢 **PASS**: High-conviction top pick (`Value Score >= 70`, `Fraud Risk == LOW`, positive news sentiment).
+  - 🟡 **WATCHLIST**: Acceptable fundamentals or mild sentiment headwinds; candidate for entry on dips.
+  - 🔴 **REJECT**: Auto-triggered by `HIGH` accounting fraud risk or severe negative news sentiment.
+- **Total Score Progress Bar**: Calculated composite score from 0.0 to 100.0 incorporating Value Score, Sentiment Score, and Fraud Penalties.
+- **Value Score & Fraud Risk Level**: Quick visual check of fundamental valuation and forensic accounting audit status.
+- **Executive Summary**: Multilingual AI-generated summary (configured via `APP_LANGUAGE=th` or `en`) with **bold recommendation terms** (`**PASS**`, `**REJECT**`).
+
+---
+
+#### 📉 2. Visual Analytics
+The **Visual Analytics** tab translates aggregate screening data into high-level portfolio distribution and risk metrics.
+
+![Visual Analytics Dashboard](docs/images/visual_analytics.png)
+
+**How to Read Results**:
+- **Recommendation Distribution (Donut Chart)**: Visualizes the proportion of screened SET100 stocks categorized into `PASS`, `WATCHLIST`, and `REJECT`.
+- **Value Score vs Total Score Scatter Plot**:
+  - Plots stock **Value Score** (x-axis) against **Total Score** (y-axis).
+  - **Color-Coded by Fraud Risk**: Green dots indicate `LOW` fraud risk, yellow dots indicate `MEDIUM` risk, and red dots mark `HIGH` accounting risk.
+  - Outliers in the top-right quadrant with green indicators represent the safest, highest-value investment candidates.
+
+---
+
+#### 🔎 3. Stock Deep-Dive Analysis
+The **Stock Deep-Dive** tab allows in-depth forensic inspection of any individual SET100 stock (e.g. `ADVANC`, `WHA`, `CPALL`).
+
+![Stock Deep-Dive Analysis](docs/images/stock_deep_dive.png)
+
+**How to Read Results**:
+- **4 Core Metric Cards**:
+  1. **Total Score**: Final composite score (out of 100.0).
+  2. **Value Score**: Fundamental valuation rating.
+  3. **Fraud Risk Level**: Forensic accounting assessment (`LOW`, `MEDIUM`, or `HIGH`).
+  4. **Sentiment Score & Orientation**: Numerical score (-100 to +100) and sentiment orientation tag e.g. `55 (POSITIVE)`.
+- **AI Executive Summary**: Concise 3–4 sentence Chief Investment Officer report in the configured language (`APP_LANGUAGE=th` for Thai), with highlighted bold decision keywords (`**PASS**`).
+- **🏷️ Stock Classification & Mega Trend Breakdown Card**:
+  - **Stock Category**: Categorization e.g. `DIVIDEND`, `GROWTH`, or `HYBRID`.
+  - **Payout Safety**: Dividend sustainability rating (`SAFE`, `CAUTION`, `UNSAFE`).
+  - **World Mega Trend Exposure**: Structural trend tags e.g. `AI & Data Center Infrastructure`.
+  - **Classification Rationale**: Localized explanation highlighting dividend yield stability, payout safety, and mega-trend growth drivers.
+- **1-Year Price History Chart**: Interactive Plotly candlestick price chart powered by `yfinance` displaying 1-year historical price action (`ADVANC.BK`).
 
 ### 3. Run SET100 Batch Screening
 Scans all ~100 tickers in parallel and exports reports:

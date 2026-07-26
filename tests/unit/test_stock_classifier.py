@@ -122,3 +122,51 @@ def test_stock_classifier_node_execution():
     assert report["ticker"] == "TEST.BK"
     assert report["category"] in ["DIVIDEND", "GROWTH", "HYBRID", "NEUTRAL"]
     assert "metrics" in report
+
+
+def test_stock_classifier_thai_language_prompt(mocker=None):
+    from unittest.mock import patch, MagicMock
+    from src.config import Config
+
+    with patch("src.nodes.stock_classifier.ChatGoogleGenerativeAI") as mock_llm_cls, \
+         patch("src.nodes.stock_classifier.Config") as mock_config:
+
+        mock_config.GOOGLE_API_KEY = "dummy_key"
+        mock_config.get_gemini_model.return_value = "gemini-3.6-flash"
+        mock_config.get_app_language.return_value = "th"
+
+        mock_structured_llm = MagicMock()
+        mock_schema_res = MagicMock()
+        mock_schema_res.model_dump.return_value = {
+            "ticker": "ADVANC.BK",
+            "category": "DIVIDEND",
+            "dividend_score": 75,
+            "growth_score": 50,
+            "payout_safety": "SAFE",
+            "mega_trends": [],
+            "mega_trend_score": 0,
+            "rationale": "บริษัทจ่ายเงินปันผลมั่นคง จัดอยู่ในหมวดหมู่ DIVIDEND",
+            "metrics": {},
+        }
+        mock_structured_llm.invoke.return_value = mock_schema_res
+
+        mock_llm = MagicMock()
+        mock_llm.with_structured_output.return_value = mock_structured_llm
+        mock_llm_cls.return_value = mock_llm
+
+        state = {
+            "ticker": "ADVANC.BK",
+            "raw_data": {"dividend_yield": 4.5, "pe_ratio": 15.0, "company_name": "ADVANC"},
+            "fraud_report": {"fraud_risk_level": "LOW"},
+        }
+
+        result = stock_classifier_node(state)
+
+        # Verify prompt contained Thai instructions
+        invoked_prompt = mock_llm.with_structured_output.call_args_list[0][0][0]
+        # Check structured_llm call prompt
+        prompt_arg = mock_structured_llm.invoke.call_args[0][0]
+        assert "Thai" in prompt_arg
+        report = result["classification_report"]
+        assert "**DIVIDEND**" in report["rationale"]
+
