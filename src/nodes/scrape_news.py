@@ -14,7 +14,8 @@ def scrape_news_node(state: StockState) -> Dict[str, Any]:
     if not ticker:
         return {"news_articles": []}
 
-    query = f"{ticker} หุ้น"
+    clean_ticker = ticker.split(".")[0].strip()
+    query = f"{clean_ticker} หุ้น"
     encoded_query = urllib.parse.quote(query)
     rss_url = f"https://news.google.com/rss/search?q={encoded_query}&hl=th&gl=TH&ceid=TH:th"
 

@@ -87,6 +87,7 @@ Edit `.env`:
 ```env
 GOOGLE_API_KEY=your_gemini_api_key_here
 GEMINI_MODEL=gemini-3.6-flash
+APP_LANGUAGE=th # Language for Executive Summaries: 'th' (Thai) or 'en' (English, default)
 TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
 TELEGRAM_CHAT_ID=your_telegram_chat_id_here
 LINE_CHANNEL_ACCESS_TOKEN=your_line_channel_access_token_here

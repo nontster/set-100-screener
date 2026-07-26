@@ -90,6 +90,7 @@ def load_cached_reports(mtime: float) -> pd.DataFrame:
             "Value Score": 80,
             "Fraud Risk": "LOW",
             "Sentiment Score": 45,
+            "Overall Sentiment": "POSITIVE",
             "Executive Summary": "Solid retail business with consistent cash flows and low fraud risk.",
         },
         {
@@ -99,6 +100,7 @@ def load_cached_reports(mtime: float) -> pd.DataFrame:
             "Value Score": 70,
             "Fraud Risk": "LOW",
             "Sentiment Score": -10,
+            "Overall Sentiment": "NEUTRAL",
             "Executive Summary": "Fairly valued energy giant; short-term sentiment headwinds.",
         },
         {
@@ -108,6 +110,7 @@ def load_cached_reports(mtime: float) -> pd.DataFrame:
             "Value Score": 45,
             "Fraud Risk": "MEDIUM",
             "Sentiment Score": 30,
+            "Overall Sentiment": "POSITIVE",
             "Executive Summary": "High valuation multiplier with moderate accounting volatility.",
         },
         {
@@ -117,6 +120,7 @@ def load_cached_reports(mtime: float) -> pd.DataFrame:
             "Value Score": 85,
             "Fraud Risk": "HIGH",
             "Sentiment Score": -60,
+            "Overall Sentiment": "NEGATIVE",
             "Executive Summary": "REJECT override triggered: Severe operating cash flow divergence.",
         },
     ]
@@ -345,7 +349,8 @@ def main():
             k1.metric("Total Score", f"{row['Total Score']:.1f}/100")
             k2.metric("Value Score", f"{row['Value Score']}/100")
             k3.metric("Fraud Risk Level", row["Fraud Risk"])
-            k4.metric("Sentiment Score", row["Sentiment Score"])
+            overall_sent = str(row.get("Overall Sentiment", "N/A"))
+            k4.metric("Sentiment Score", f"{row['Sentiment Score']} ({overall_sent})")
 
             st.markdown("#### AI Executive Summary")
             st.info(row["Executive Summary"])
