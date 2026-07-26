@@ -1,6 +1,7 @@
 {
   "ai": "agy",
   "ai_skills": true,
+  "use_git": true,
   "feature_numbering": "sequential",
   "here": false,
   "integration": "agy",
