@@ -139,7 +139,7 @@ The Streamlit web application provides a comprehensive multi-view interface orga
 #### 📊 1. Interactive Screening Table
 The **Interactive Screening Table** displays all evaluated SET100 stocks in a sortable, filterable table.
 
-![Interactive Screening Table](docs/images/screening_table.jpg)
+![Interactive Screening Table](docs/images/screening_table.png)
 
 **How to Read Results**:
 - **Sidebar Filters**: Filter stocks by **Recommendation Status** (`PASS`, `WATCHLIST`, `REJECT`), **Stock Category** (`DIVIDEND`, `GROWTH`, `HYBRID`, `NEUTRAL`), **Payout Safety** (`SAFE`, `CAUTION`, `UNSAFE`), and **World Mega Trends** (`AI & Data Center Infrastructure`, `EV & Renewable Energy`, etc.).
@@ -156,7 +156,7 @@ The **Interactive Screening Table** displays all evaluated SET100 stocks in a so
 #### 📉 2. Visual Analytics
 The **Visual Analytics** tab translates aggregate screening data into high-level portfolio distribution and risk metrics.
 
-![Visual Analytics Dashboard](docs/images/visual_analytics.jpg)
+![Visual Analytics Dashboard](docs/images/visual_analytics.png)
 
 **How to Read Results**:
 - **Recommendation Distribution (Donut Chart)**: Visualizes the proportion of screened SET100 stocks categorized into `PASS`, `WATCHLIST`, and `REJECT`.
@@ -170,7 +170,7 @@ The **Visual Analytics** tab translates aggregate screening data into high-level
 #### 🔎 3. Stock Deep-Dive Analysis
 The **Stock Deep-Dive** tab allows in-depth forensic inspection of any individual SET100 stock (e.g. `ADVANC`, `WHA`, `CPALL`).
 
-![Stock Deep-Dive Analysis](docs/images/stock_deep_dive.jpg)
+![Stock Deep-Dive Analysis](docs/images/stock_deep_dive.png)
 
 **How to Read Results**:
 - **4 Core Metric Cards**:
