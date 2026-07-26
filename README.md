@@ -86,6 +86,7 @@ cp .env.example .env
 Edit `.env`:
 ```env
 GOOGLE_API_KEY=your_gemini_api_key_here
+GEMINI_MODEL=gemini-3.6-flash
 TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
 TELEGRAM_CHAT_ID=your_telegram_chat_id_here
 LINE_CHANNEL_ACCESS_TOKEN=your_line_channel_access_token_here
@@ -147,7 +148,7 @@ python -m src.scheduler
 
 ## 🧪 Testing
 
-Run the complete test suite (28 unit and integration tests):
+Run the complete test suite (31 unit and integration tests):
 ```bash
 PYTHONPATH=. .venv/bin/pytest tests/ -v
 ```
